@@ -1,6 +1,7 @@
 package com.varisahayak.data.remote.dto
 
 import com.varisahayak.data.local.entity.IncidentEntity
+import com.varisahayak.domain.model.IncidentStatus
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
@@ -69,6 +70,14 @@ data class IncidentUpsertDto(
     @SerialName("sos_bridge_token") val sosBridgeToken: String? = null,
     @SerialName("area_id") val areaId: String? = null,
     @SerialName("organisation_id") val organisationId: String? = null,
+    /**
+     * The one field that makes a responder's Accept stick.
+     *
+     * Without it the upsert left `status` alone, the server echoed back the row it already
+     * had, and markSynced wrote that stale value straight over the local ACCEPTED — so the
+     * Accept button came back and every re-tap logged another event.
+     */
+    @SerialName("status") val status: String,
 )
 
 @Serializable
@@ -167,6 +176,14 @@ fun IncidentEntity.toUpsertDto(reportedAtIso: String): IncidentUpsertDto = Incid
     sosBridgeToken = sosBridgeToken,
     areaId = areaId,
     organisationId = organisationId,
+    // PENDING_SYNC is a device-only state meaning "not uploaded yet". Uploading it as
+    // itself would park the incident in a status the server's own triggers ignore, so the
+    // act of uploading is what makes it REPORTED.
+    status = if (status == IncidentStatus.PENDING_SYNC.wireName) {
+        IncidentStatus.REPORTED.wireName
+    } else {
+        status
+    },
 )
 
 /**
