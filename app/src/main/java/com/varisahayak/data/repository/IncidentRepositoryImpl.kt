@@ -179,15 +179,21 @@ class IncidentRepositoryImpl @Inject constructor(
                 incidentDao.setStatus(clientId, result.status.wireName, now)
                 incidentDao.setSyncState(clientId, SyncState.PENDING.name)
 
-                recordEvent(
-                    incidentClientId = clientId,
-                    type = IncidentEventType.STATUS_CHANGED,
-                    actorId = supabase.auth.currentUserOrNull()?.id,
-                    fromValue = current.wireName,
-                    toValue = result.status.wireName,
-                    note = note,
-                    at = now,
-                )
+                // Only for an incident the server has never seen. Once it has a serverId
+                // the `incidents_log_transition` trigger writes this same STATUS_CHANGED
+                // row on the next sync, and refreshTimeline pulls it back — so writing one
+                // here too put every transition in the timeline twice.
+                if (existing.serverId.isNullOrBlank()) {
+                    recordEvent(
+                        incidentClientId = clientId,
+                        type = IncidentEventType.STATUS_CHANGED,
+                        actorId = supabase.auth.currentUserOrNull()?.id,
+                        fromValue = current.wireName,
+                        toValue = result.status.wireName,
+                        note = note,
+                        at = now,
+                    )
+                }
 
                 // Gamification: Award XP and record impact on resolution
                 if (result.status == IncidentStatus.RESOLVED) {

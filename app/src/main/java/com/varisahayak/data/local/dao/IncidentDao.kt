@@ -112,7 +112,14 @@ interface IncidentDao {
             return
         }
 
-        if (local.syncState == "PENDING" || local.syncState == "SYNCING") return
+        // FAILED counts as still-unsynced. Without it, an upload that errored had its
+        // local edit silently overwritten by the stale server row on the next refresh —
+        // the responder's Accept vanished and they tapped it again, and again.
+        if (local.syncState == "PENDING" || local.syncState == "SYNCING" ||
+            local.syncState == "FAILED"
+        ) {
+            return
+        }
 
         upsert(
             local.copy(
