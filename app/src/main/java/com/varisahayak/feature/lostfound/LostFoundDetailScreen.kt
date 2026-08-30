@@ -1,5 +1,7 @@
 package com.varisahayak.feature.lostfound
 
+import android.content.Intent
+import android.net.Uri
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -28,6 +30,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -35,6 +38,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.varisahayak.R
 import com.varisahayak.core.designsystem.Dimens
 import com.varisahayak.core.designsystem.component.SyncBadge
+import com.varisahayak.core.designsystem.component.VariPrimaryButton
+import com.varisahayak.core.designsystem.component.VariSecondaryButton
 import com.varisahayak.core.media.PhotoCapture
 import com.varisahayak.domain.model.LostFoundKind
 import com.varisahayak.domain.model.LostFoundStatus
@@ -85,6 +90,12 @@ fun LostFoundDetailScreen(
                 ReportHeaderCard(report = report)
             }
 
+            // Whoever is holding this person, and how to reach them. Shown for as long as
+            // the report is unresolved — the point at which the two sides need each other.
+            if (report.isActive) {
+                item { ContactAndNavigateCard(report = report) }
+            }
+
             if (candidates.isNotEmpty()) {
                 item {
                     Text(
@@ -109,6 +120,96 @@ fun LostFoundDetailScreen(
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
+            }
+        }
+    }
+}
+
+/**
+ * The other side of the report: who to call, and where to walk.
+ *
+ * On a Found report that is the volunteer currently caring for the person; on a Lost
+ * report it is the guardian who filed it. Either way the family's next two actions are
+ * the same two buttons, so they are the same card.
+ *
+ * The point handed to Maps is the freshest one the report carries — a volunteer who moves
+ * and re-syncs updates [lastKnownLocation], so re-opening this screen re-aims the pin.
+ */
+@Composable
+private fun ContactAndNavigateCard(report: com.varisahayak.domain.model.LostFoundReport) {
+    val context = LocalContext.current
+    val isFound = report.kind == LostFoundKind.FOUND
+
+    val contactName = if (isFound) report.custodianName else report.guardianName
+    val contactPhone = if (isFound) report.custodianContact else report.guardianPhone
+    val point = report.lastKnownLocation ?: report.deviceLocation
+
+    if (contactName == null && contactPhone == null && point == null) return
+
+    Card(modifier = Modifier.fillMaxWidth()) {
+        Column(
+            modifier = Modifier.padding(Dimens.SpaceMd),
+            verticalArrangement = Arrangement.spacedBy(Dimens.SpaceSm)
+        ) {
+            Text(
+                text = if (isFound) "With volunteer" else "Reported by",
+                style = MaterialTheme.typography.titleMedium
+            )
+
+            contactName?.let {
+                Text(text = it, style = MaterialTheme.typography.bodyLarge)
+            }
+            contactPhone?.let {
+                Text(
+                    text = it,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            report.qrLocationName?.let {
+                Text(
+                    text = "Last seen near $it",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+
+            Row(horizontalArrangement = Arrangement.spacedBy(Dimens.SpaceSm)) {
+                if (contactPhone != null) {
+                    VariSecondaryButton(
+                        text = "Call",
+                        onClick = {
+                            context.startActivity(
+                                Intent(Intent.ACTION_DIAL, Uri.parse("tel:$contactPhone"))
+                            )
+                        },
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+                if (point != null) {
+                    VariPrimaryButton(
+                        text = "Navigate",
+                        onClick = {
+                            // Handed to whatever maps app is installed rather than drawn
+                            // in-app: turn-by-turn is not something to reimplement, and
+                            // the volunteer may be a kilometre away in a crowd.
+                            val uri = Uri.parse(
+                                "geo:${point.latitude},${point.longitude}" +
+                                    "?q=${point.latitude},${point.longitude}(${report.title})"
+                            )
+                            context.startActivity(Intent(Intent.ACTION_VIEW, uri))
+                        },
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+            }
+
+            if (point == null) {
+                Text(
+                    text = "No location on this report yet.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
         }
     }
