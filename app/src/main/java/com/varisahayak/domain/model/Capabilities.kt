@@ -23,8 +23,6 @@ data class Capabilities(
     val canReportIncident: Boolean,
     /** Raise an SOS from the dashboard in one tap. */
     val canRaiseSos: Boolean,
-    /** Open the QR scanner and resolve a Varkari's wristband. */
-    val canScanQr: Boolean,
     /** File and search Lost & Found reports. */
     val canUseLostFound: Boolean,
     /** Accept or reject an assignment addressed to them. */
@@ -60,11 +58,10 @@ data class Capabilities(
             role.isCommand -> Capabilities(
                 // Command users coordinate rather than attend. They keep the ability to
                 // file and raise — an organiser standing next to an emergency must not
-                // have to hand their phone to somebody else — but the scanner and Lost &
-                // Found are field surfaces they have no reason to carry.
+                // have to hand their phone to somebody else — but Lost & Found is a field
+                // surface they have no reason to carry.
                 canReportIncident = true,
                 canRaiseSos = true,
-                canScanQr = false,
                 canUseLostFound = false,
                 canAcceptAssignment = false,
                 canProgressOwnIncident = true,
@@ -80,9 +77,6 @@ data class Capabilities(
             role.isResponder -> Capabilities(
                 canReportIncident = true,
                 canRaiseSos = true,
-                // A responder can be handed a wristband too; the scanner stays available
-                // even though it is not on their bottom bar.
-                canScanQr = true,
                 canUseLostFound = true,
                 canAcceptAssignment = true,
                 canProgressOwnIncident = true,
@@ -98,11 +92,10 @@ data class Capabilities(
             )
 
             else -> Capabilities(
-                // The volunteer baseline: report, raise, scan, search. Everything that
+                // The volunteer baseline: report, raise, search. Everything that
                 // decides who goes where is somebody else's.
                 canReportIncident = true,
                 canRaiseSos = true,
-                canScanQr = true,
                 canUseLostFound = true,
                 canAcceptAssignment = false,
                 canProgressOwnIncident = true,
@@ -126,7 +119,6 @@ data class Capabilities(
         val NONE = Capabilities(
             canReportIncident = false,
             canRaiseSos = false,
-            canScanQr = false,
             canUseLostFound = false,
             canAcceptAssignment = false,
             canProgressOwnIncident = false,

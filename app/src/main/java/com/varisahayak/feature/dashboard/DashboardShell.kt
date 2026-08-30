@@ -7,7 +7,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.FindInPage
 import androidx.compose.material.icons.filled.Map
 import androidx.compose.material.icons.filled.PersonSearch
-import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material.icons.filled.ReportProblem
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.MaterialTheme
@@ -38,7 +37,6 @@ import com.varisahayak.domain.model.Capabilities
 /** Callbacks the shell needs, gathered so each screen signature stays readable. */
 data class DashboardActions(
     val onReport: () -> Unit,
-    val onScan: () -> Unit,
     val onMap: () -> Unit,
     val onLostFound: () -> Unit,
     val onReportFound: () -> Unit,
@@ -124,16 +122,6 @@ private fun quickActionsFor(
                 icon = Icons.Filled.ReportProblem,
                 tone = Accents.red,
                 onClick = actions.onReport,
-            ),
-        )
-    }
-    if (capabilities.canScanQr) {
-        add(
-            QuickAction(
-                label = stringResource(R.string.nav_scan),
-                icon = Icons.Filled.QrCodeScanner,
-                tone = Accents.purple,
-                onClick = actions.onScan,
             ),
         )
     }

@@ -90,11 +90,11 @@ fun LostFoundDetailScreen(
                 ReportHeaderCard(report = report)
             }
 
-            // Whoever is holding this person, and how to reach them. Shown for as long as
-            // the report is unresolved — the point at which the two sides need each other.
-            if (report.isActive) {
-                item { ContactAndNavigateCard(report = report) }
-            }
+            // Whoever is holding this person, and how to reach them. Shown whatever the
+            // report's state: it was gated on isActive, which meant the one screen that
+            // knows where the person is stopped offering Navigate the moment the report
+            // was marked resolved — exactly when somebody is still walking to them.
+            item { ContactAndNavigateCard(report = report) }
 
             if (candidates.isNotEmpty()) {
                 item {

@@ -1,9 +1,13 @@
 package com.varisahayak.feature.lostfound
 
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Card
 import androidx.compose.material3.HorizontalDivider
@@ -11,12 +15,19 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import com.varisahayak.R
 import com.varisahayak.core.designsystem.Dimens
 import com.varisahayak.core.designsystem.component.VariPrimaryButton
+import com.varisahayak.core.media.PhotoCapture
 import com.varisahayak.domain.model.LostFoundReport
 import com.varisahayak.domain.model.MatchConfidence
 import com.varisahayak.domain.model.MatchSignal
@@ -50,7 +61,13 @@ fun CandidateCard(
                 fontWeight = FontWeight.Bold,
             )
 
-            Row(horizontalArrangement = Arrangement.spacedBy(Dimens.SpaceMd)) {
+            // Both faces at the same size, on the same line, at the top of the card.
+            // Comparing two people is the one thing this screen exists for, and it was
+            // asking the reviewer to do it from two text columns.
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(Dimens.SpaceMd),
+                modifier = Modifier.fillMaxWidth(),
+            ) {
                 SidePanel(
                     labelRes = R.string.match_lost_side,
                     report = candidate.lost,
@@ -113,6 +130,8 @@ fun SidePanel(labelRes: Int, report: LostFoundReport?, modifier: Modifier = Modi
             return@Column
         }
 
+        SidePhoto(report = report)
+
         Text(text = report.title, style = MaterialTheme.typography.bodyMedium)
 
         listOfNotNull(
@@ -151,4 +170,45 @@ fun SignalRow(signal: MatchSignal) {
             else -> MaterialTheme.colorScheme.onSurface
         },
     )
+}
+
+/**
+ * One side's photograph, or an honest placeholder.
+ *
+ * Square and equal-width on both sides so the two faces are the same size — a comparison
+ * where one image is larger reads as one being the better answer. A missing photo says so
+ * in words rather than collapsing the column, because "no photo on this report" and "these
+ * faces differ" are different facts and the reviewer has to be able to tell them apart.
+ */
+@Composable
+private fun SidePhoto(report: LostFoundReport, modifier: Modifier = Modifier) {
+    val bitmap = remember(report.photoLocalPath) {
+        report.photoLocalPath?.let { PhotoCapture.thumbnail(it) }
+    }
+
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .aspectRatio(1f)
+            .clip(MaterialTheme.shapes.medium)
+            .background(MaterialTheme.colorScheme.surfaceVariant),
+        contentAlignment = Alignment.Center,
+    ) {
+        if (bitmap != null) {
+            Image(
+                bitmap = bitmap.asImageBitmap(),
+                contentDescription = null,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier.fillMaxWidth().aspectRatio(1f),
+            )
+        } else {
+            Text(
+                text = stringResource(R.string.match_no_photo),
+                style = MaterialTheme.typography.bodySmall,
+                textAlign = TextAlign.Center,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(Dimens.SpaceXs),
+            )
+        }
+    }
 }

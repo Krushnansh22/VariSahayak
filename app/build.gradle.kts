@@ -294,7 +294,6 @@ dependencies {
     implementation(libs.androidx.camera.view)
     implementation(libs.androidx.camera.compose)
     implementation(libs.androidx.exifinterface)
-    implementation(libs.mlkit.barcode.scanning)
 
     // --- maps + location ---
     implementation(libs.maps.compose)

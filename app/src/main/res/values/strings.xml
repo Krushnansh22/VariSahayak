@@ -392,6 +392,7 @@
     <string name="match_confirm">Confirm match</string>
     <string name="match_reject">Not a match</string>
     <string name="match_human_required">A volunteer must confirm before a case is closed.</string>
+    <string name="match_no_photo">No photo on this report</string>
     <string name="match_no_candidates">No matches to review.</string>
     <string name="match_lost_side">Lost report</string>
     <string name="match_found_side">Found report</string>
