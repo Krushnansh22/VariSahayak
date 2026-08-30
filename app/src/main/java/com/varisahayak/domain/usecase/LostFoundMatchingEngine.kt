@@ -103,6 +103,12 @@ class LostFoundMatchingEngine @Inject constructor() {
                 )
             }
             .filter { it.score.overall >= MINIMUM_SURFACING_SCORE }
+            // A candidate the engine itself rates LOW is not worth a volunteer's walk.
+            // Surfacing them was what made the review list read as noise: two reports of
+            // the same subject type in the same window scored above the old floor on
+            // almost nothing, and a reviewer who rejects ten bad rows stops reading the
+            // eleventh. Anything genuinely borderline still arrives as MEDIUM.
+            .filter { it.score.confidence != MatchConfidence.LOW }
             .sortedWith(
                 compareByDescending<RankedCandidate> { it.score.overall }
                     // Deterministic tie-break so the same pool always ranks the same way
@@ -620,7 +626,7 @@ class LostFoundMatchingEngine @Inject constructor() {
         const val FACE_WEAK_TOLERANCE = 0.60
 
         /** Below this a pairing is not worth a volunteer's attention. */
-        const val MINIMUM_SURFACING_SCORE = 0.30
+        const val MINIMUM_SURFACING_SCORE = 0.55
 
         /** Reported times are human estimates; small inversions are not contradictions. */
         const val CLOCK_TOLERANCE_MINUTES = 10

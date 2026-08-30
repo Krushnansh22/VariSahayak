@@ -78,7 +78,6 @@ import com.varisahayak.feature.lostfound.MatchReviewScreen
 import com.varisahayak.feature.map.IncidentMapScreen
 import com.varisahayak.feature.profile.ProfileScreen
 import com.varisahayak.feature.profile.ProfileViewModel
-import com.varisahayak.feature.qr.QrScannerScreen
 
 @Composable
 fun VariSahayakApp(
@@ -364,7 +363,6 @@ private fun String?.titleRes(): Int = when {
     contains("IncidentList") -> R.string.nav_incidents
     contains("IncidentDetail") -> R.string.incident_detail_title
     contains("ReportIncident") -> R.string.report_title
-    contains("QrScanner") -> R.string.qr_scan_title
     contains("LostAndFound") -> R.string.lostfound_title
     contains("Communication") -> R.string.comms_title
     contains("Profile") -> R.string.profile_title
@@ -386,7 +384,6 @@ private fun VariNavHost(
     // button going to different places.
     val dashboardActions = DashboardActions(
         onReport = { navController.navigate(Destination.ReportIncident()) },
-        onScan = { navController.navigate(Destination.QrScanner) },
         onMap = { navController.navigate(Destination.IncidentMap) },
         onLostFound = { navController.navigate(Destination.LostAndFound()) },
         onReportFound = { navController.navigate(Destination.LostAndFound(kind = "FOUND")) },
@@ -509,32 +506,6 @@ private fun VariNavHost(
             IncidentMapScreen(
                 onIncidentSelected = { clientId ->
                     navController.navigate(Destination.IncidentDetail(clientId))
-                },
-            )
-        }
-
-        composable<Destination.QrScanner> {
-            // A scan establishes only *where*. The volunteer then chooses what to do with
-            // that location, and both paths carry the token forward so the report is filed
-            // against the fixed sign rather than a phone fix in a crowd.
-            QrScannerScreen(
-                onReportEmergency = { result ->
-                    navController.navigate(
-                        Destination.ReportIncident(
-                            qrLocationToken = result.token,
-                            qrLocationName = result.location?.locationName,
-                            isSos = true,
-                        ),
-                    )
-                },
-                onReportFoundPerson = { result ->
-                    navController.navigate(
-                        Destination.LostAndFound(
-                            qrLocationToken = result.token,
-                            qrLocationName = result.location?.locationName,
-                            kind = "FOUND",
-                        ),
-                    )
                 },
             )
         }

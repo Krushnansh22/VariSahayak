@@ -7,7 +7,6 @@ import androidx.compose.material.icons.filled.ListAlt
 import androidx.compose.material.icons.filled.Map
 import androidx.compose.material.icons.filled.Message
 import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.ui.graphics.vector.ImageVector
 import com.varisahayak.R
 import com.varisahayak.domain.model.Capabilities
@@ -27,7 +26,6 @@ enum class TopLevelDestination(
     INCIDENTS(Icons.Filled.ListAlt),
     MAP(Icons.Filled.Map),
     COMMS(Icons.Filled.Message),
-    SCAN(Icons.Filled.QrCodeScanner),
     PROFILE(Icons.Filled.Person),
     ;
 
@@ -44,7 +42,6 @@ enum class TopLevelDestination(
         INCIDENTS -> R.string.nav_incidents
         MAP -> R.string.nav_map
         COMMS -> R.string.comms_title
-        SCAN -> R.string.nav_scan
         PROFILE -> R.string.nav_profile
     }
 
@@ -56,7 +53,6 @@ enum class TopLevelDestination(
         INCIDENTS -> Destination.IncidentList
         MAP -> Destination.IncidentMap
         COMMS -> Destination.Communication
-        SCAN -> Destination.QrScanner
         PROFILE -> Destination.Profile
     }
 
@@ -65,21 +61,14 @@ enum class TopLevelDestination(
          * Derived from [Capabilities] rather than from the role directly, so the bottom
          * bar and the screen contents can never disagree about what a role may do.
          *
-         * Note this is about *prominence*, not permission: a responder can still reach
-         * the scanner from the incident detail screen, it simply is not one of their four
-         * most-used surfaces. Only [Capabilities.canScanQr] removes it entirely.
+         * Note this is about *prominence*, not permission.
          */
         fun forRole(role: UserRole): List<TopLevelDestination> {
-            val capabilities = Capabilities.of(role)
-
             return buildList {
                 add(HOME)
                 add(INCIDENTS)
                 add(MAP)
                 add(COMMS)
-                // The scanner earns a permanent slot only for the volunteer, whose whole
-                // job on the route is meeting Varkaris who have no phone.
-                if (capabilities.canScanQr && !capabilities.canSeeAreaWideIncidents) add(SCAN)
                 add(PROFILE)
             }
         }

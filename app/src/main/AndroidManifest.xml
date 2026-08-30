@@ -76,12 +76,6 @@
             android:name="com.google.android.geo.API_KEY"
             android:value="${googleMapsApiKey}" />
 
-        <!-- Bundled ML Kit barcode model: no first-use download, so the scanner works
-             the first time it is opened in the field with no connectivity. -->
-        <meta-data
-            android:name="com.google.mlkit.vision.DEPENDENCIES"
-            android:value="barcode" />
-
         <service
             android:name=".feature.notifications.VariSahayakMessagingService"
             android:exported="false">

@@ -59,9 +59,6 @@ sealed interface Destination {
     data object IncidentMap : Destination
 
     @Serializable
-    data object QrScanner : Destination
-
-    @Serializable
     data class LostAndFound(
         val qrLocationToken: String? = null,
         val qrLocationName: String? = null,
