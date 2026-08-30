@@ -625,10 +625,6 @@ private fun ChatInput(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            IconButton(onClick = {}) {
-                Icon(Icons.Default.Mic, contentDescription = null, tint = colors.textMuted)
-            }
-            
             TextField(
                 value = text,
                 onValueChange = { text = it },

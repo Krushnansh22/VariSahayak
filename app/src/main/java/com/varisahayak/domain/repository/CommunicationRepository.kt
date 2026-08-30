@@ -15,7 +15,7 @@ interface CommunicationRepository {
     
     /** Observes new messages for a specific channel. */
     fun observeMessages(channelId: String): Flow<CommunicationMessage>
-    
+
     /** 
      * Sends a message to one or more channels.
      * If multiple channels are provided, it acts as a broadcast.
@@ -26,7 +26,7 @@ interface CommunicationRepository {
         content: String,
         isSos: Boolean = false
     ): Outcome<List<CommunicationMessage>>
-    
+
     /** Marks messages in a channel as read. */
     suspend fun markAsRead(channelId: String): Outcome<Unit>
 }

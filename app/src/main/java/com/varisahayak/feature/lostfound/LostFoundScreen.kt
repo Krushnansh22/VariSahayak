@@ -1,33 +1,61 @@
 package com.varisahayak.feature.lostfound
 
+import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.Image
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
 import androidx.compose.animation.slideInVertically
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.animation.slideOutVertically
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AddAPhoto
+import androidx.compose.material.icons.filled.PersonSearch
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -39,20 +67,27 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.varisahayak.R
 import com.varisahayak.core.common.AppError
 import com.varisahayak.core.designsystem.Dimens
+import com.varisahayak.core.designsystem.VariTheme
 import com.varisahayak.core.designsystem.component.EmptyState
 import com.varisahayak.core.designsystem.component.SyncBadge
-import com.varisahayak.core.designsystem.component.VariPrimaryButton
 import com.varisahayak.core.designsystem.component.VariSecondaryButton
 import com.varisahayak.core.media.PhotoCapture
 import com.varisahayak.core.permissions.AppPermissions
@@ -84,77 +119,113 @@ fun LostFoundScreen(
         visible = true
     }
 
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .padding(Dimens.ScreenPadding),
-        verticalArrangement = Arrangement.spacedBy(Dimens.SpaceMd),
+    AnimatedVisibility(
+        visible = visible,
+        enter = fadeIn(tween(800)) + slideInVertically(tween(800)) { 20 }
     ) {
-        // Candidates first. A pending match is somebody waiting to be reunited, and it
-        // outranks everything else on this screen.
-        if (uiState.candidateCount > 0) {
-            Card(modifier = Modifier.fillMaxWidth()) {
-                Column(
-                    modifier = Modifier.padding(Dimens.SpaceMd),
-                    verticalArrangement = Arrangement.spacedBy(Dimens.SpaceXs),
+        Column(
+            modifier = modifier
+                .fillMaxSize()
+                .padding(Dimens.ScreenPadding),
+            verticalArrangement = Arrangement.spacedBy(Dimens.SpaceMd),
+        ) {
+            // Candidates first. A pending match is somebody waiting to be reunited, and it
+            // outranks everything else on this screen.
+            // Candidates first.
+            if (uiState.candidateCount > 0) {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(
+                        containerColor = VariTheme.colors.brandSubtle.copy(alpha = 0.5f)
+                    ),
+                    shape = RoundedCornerShape(Dimens.CornerCard),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
                 ) {
-                    Text(
-                        text = stringResource(
-                            R.string.lostfound_pending_matches,
-                            uiState.candidateCount,
-                        ),
-                        style = MaterialTheme.typography.titleMedium,
-                    )
-                    TextButton(onClick = onOpenMatches) {
-                        Text(stringResource(R.string.lostfound_review_matches))
+                    Column(
+                        modifier = Modifier.padding(Dimens.SpaceMd),
+                        verticalArrangement = Arrangement.spacedBy(Dimens.SpaceXs),
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                imageVector = Icons.Default.PersonSearch,
+                                contentDescription = null,
+                                tint = VariTheme.colors.brandSolid,
+                                modifier = Modifier.size(24.dp)
+                            )
+                            Spacer(modifier = Modifier.width(Dimens.SpaceSm))
+                            Text(
+                                text = stringResource(
+                                    R.string.lostfound_pending_matches,
+                                    uiState.candidateCount,
+                                ),
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = VariTheme.colors.textPrimary
+                            )
+                        }
+                        TextButton(
+                            onClick = onOpenMatches,
+                            modifier = Modifier.align(Alignment.End)
+                        ) {
+                            Text(
+                                stringResource(R.string.lostfound_review_matches),
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
                     }
                 }
             }
-        }
 
-        Row(horizontalArrangement = Arrangement.spacedBy(Dimens.SpaceSm)) {
-            VariPrimaryButton(
-                text = stringResource(R.string.lostfound_report_lost),
-                onClick = { viewModel.openReport(LostFoundKind.LOST) },
-                modifier = Modifier.weight(1f),
+            ActionButtonsRow(
+                onReportLost = { viewModel.openReport(LostFoundKind.LOST) },
+                onFoundPerson = { viewModel.openReport(LostFoundKind.FOUND) }
             )
-            VariPrimaryButton(
-                text = stringResource(R.string.lostfound_report_found),
-                onClick = { viewModel.openReport(LostFoundKind.FOUND) },
-                modifier = Modifier.weight(1f),
+
+            OutlinedTextField(
+                value = uiState.query,
+                onValueChange = viewModel::onQueryChanged,
+                label = { Text(stringResource(R.string.lostfound_search)) },
+                leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
+                singleLine = true,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .defaultMinSize(minHeight = Dimens.MinTouchTarget),
+                shape = RoundedCornerShape(Dimens.CornerMd)
             )
-        }
 
-        OutlinedTextField(
-            value = uiState.query,
-            onValueChange = viewModel::onQueryChanged,
-            label = { Text(stringResource(R.string.lostfound_search)) },
-            singleLine = true,
-            modifier = Modifier
-                .fillMaxWidth()
-                .defaultMinSize(minHeight = Dimens.MinTouchTarget),
-        )
-
-        Row(horizontalArrangement = Arrangement.spacedBy(Dimens.SpaceSm)) {
-            BoardFilter.entries.forEach { side ->
-                FilterChip(
-                    selected = uiState.filter == side,
-                    onClick = { viewModel.onFilterChanged(side) },
-                    label = { Text(stringResource(side.labelRes())) },
-                    modifier = Modifier.defaultMinSize(minHeight = Dimens.MinTouchTarget),
-                )
-            }
-        }
-
-        if (reports.isEmpty()) {
-            EmptyState(message = stringResource(R.string.lostfound_empty))
-        } else {
-            LazyColumn(verticalArrangement = Arrangement.spacedBy(Dimens.SpaceSm)) {
-                items(reports, key = { it.clientId }) { report ->
-                    LostFoundRow(
-                        report = report,
-                        onClick = { onReportDetail(report.clientId) }
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(Dimens.SpaceSm)
+            ) {
+                BoardFilter.entries.forEach { side ->
+                    FilterChip(
+                        selected = uiState.filter == side,
+                        onClick = { viewModel.onFilterChanged(side) },
+                        label = { Text(stringResource(side.labelRes())) },
+                        modifier = Modifier.defaultMinSize(minHeight = Dimens.MinTouchTarget),
                     )
+                }
+            }
+
+            if (reports.isEmpty()) {
+                EmptyState(message = stringResource(R.string.lostfound_empty))
+            } else {
+                LazyColumn(
+                    verticalArrangement = Arrangement.spacedBy(Dimens.SpaceMd),
+                    modifier = Modifier.fillMaxSize()
+                ) {
+                    itemsIndexed(reports, key = { _, report -> report.clientId }) { index, report ->
+                        AnimatedVisibility(
+                            visible = visible,
+                            enter = fadeIn(tween(600, delayMillis = 100 + index * 50)) +
+                                    slideInVertically(tween(600, delayMillis = 100 + index * 50)) { 20 }
+                        ) {
+                            LostFoundRow(
+                                report = report,
+                                onClick = { onReportDetail(report.clientId) },
+                            )
+                        }
+                    }
                 }
             }
         }
@@ -205,69 +276,240 @@ private fun BoardFilter.labelRes(): Int = when (this) {
     BoardFilter.FOUND -> R.string.lostfound_side_found
 }
 
+/**
+ * The two ways onto the board, weighted equally.
+ *
+ * Colour carries the side — red for a person missing, green for a person found — but the
+ * label and the icon carry it too, so the pair is still distinguishable without colour.
+ */
+@Composable
+private fun ActionButtonsRow(
+    onReportLost: () -> Unit,
+    onFoundPerson: () -> Unit,
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(Dimens.SpaceSm)
+    ) {
+        EnhancedActionButton(
+            text = stringResource(R.string.lostfound_report_lost),
+            onClick = onReportLost,
+            containerColor = VariTheme.colors.criticalContainer,
+            contentColor = VariTheme.colors.critical,
+            icon = Icons.Default.AddAPhoto,
+            modifier = Modifier.weight(1f)
+        )
+        EnhancedActionButton(
+            text = stringResource(R.string.lostfound_report_found),
+            onClick = onFoundPerson,
+            containerColor = VariTheme.colors.successContainer,
+            contentColor = VariTheme.colors.success,
+            icon = Icons.Default.PersonSearch,
+            modifier = Modifier.weight(1f)
+        )
+    }
+}
+
+@Composable
+private fun EnhancedActionButton(
+    text: String,
+    onClick: () -> Unit,
+    containerColor: Color,
+    contentColor: Color,
+    icon: ImageVector,
+    modifier: Modifier = Modifier,
+) {
+    val interactionSource = remember { MutableInteractionSource() }
+    val isPressed by interactionSource.collectIsPressedAsState()
+    val scale by animateFloatAsState(
+        targetValue = if (isPressed) 0.95f else 1f,
+        animationSpec = tween(100),
+        label = "button_scale"
+    )
+
+    Button(
+        onClick = onClick,
+        interactionSource = interactionSource,
+        colors = ButtonDefaults.buttonColors(
+            containerColor = containerColor,
+            contentColor = contentColor
+        ),
+        shape = RoundedCornerShape(Dimens.CornerMd),
+        modifier = modifier
+            .height(64.dp)
+            .scale(scale),
+        elevation = ButtonDefaults.buttonElevation(
+            defaultElevation = 2.dp,
+            pressedElevation = 0.dp
+        )
+    ) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Icon(imageVector = icon, contentDescription = null, modifier = Modifier.size(24.dp))
+            Text(
+                text = text,
+                style = MaterialTheme.typography.labelMedium,
+                fontWeight = FontWeight.Bold,
+                textAlign = TextAlign.Center
+            )
+        }
+    }
+}
+
+/**
+ * One report on the board.
+ *
+ * The thumbnail leads, because a face is what a volunteer scanning the list actually
+ * recognises. Tapping the row opens the report — the only route to a report's detail.
+ */
 @Composable
 private fun LostFoundRow(
     report: LostFoundReport,
     onClick: () -> Unit,
 ) {
     Card(
-        modifier = Modifier.fillMaxWidth(),
         onClick = onClick,
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(Dimens.CornerCard),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
     ) {
-        Column(
-            modifier = Modifier.padding(Dimens.SpaceMd),
-            verticalArrangement = Arrangement.spacedBy(Dimens.SpaceXs),
+        Row(
+            modifier = Modifier
+                .padding(Dimens.SpaceMd)
+                .fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(text = report.title, style = MaterialTheme.typography.titleMedium)
-
-            // The attributes a volunteer actually scans a list for.
-            val summary = listOfNotNull(
-                report.approximateAge?.let {
-                    stringResource(R.string.lostfound_age_approx, it)
-                },
-                report.clothingDescription,
-                report.qrLocationName,
-            ).joinToString(" · ")
-
-            if (summary.isNotBlank()) {
-                Text(
-                    text = summary,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
+            // Decoded small and off the full image: this runs during composition, and a
+            // list of full-size JPEGs is a visible stutter on the phones this app targets.
+            val photoPath = report.photoLocalPath
+            val bitmap = remember(photoPath) {
+                photoPath?.let { PhotoCapture.thumbnail(it, maxEdgePx = 160) }
             }
 
-            // Who is holding this person right now — the question a frantic parent asks.
-            if (report.kind == LostFoundKind.FOUND && report.custodianName != null) {
-                Text(
-                    text = stringResource(R.string.lostfound_with_custodian, report.custodianName),
-                    style = MaterialTheme.typography.bodySmall,
-                )
+            Box(
+                modifier = Modifier
+                    .size(80.dp)
+                    .clip(RoundedCornerShape(Dimens.CornerMd))
+                    .background(MaterialTheme.colorScheme.surfaceVariant),
+                contentAlignment = Alignment.Center
+            ) {
+                if (bitmap != null) {
+                    Image(
+                        bitmap = bitmap.asImageBitmap(),
+                        // Labelled by the row, not described. Nothing here should try to
+                        // characterise a photograph of a missing person.
+                        contentDescription = null,
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.fillMaxSize()
+                    )
+                } else {
+                    Icon(
+                        imageVector = if (report.kind == LostFoundKind.LOST) {
+                            Icons.Default.Search
+                        } else {
+                            Icons.Default.PersonSearch
+                        },
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
+                        modifier = Modifier.size(32.dp)
+                    )
+                }
             }
 
-            Row(horizontalArrangement = Arrangement.spacedBy(Dimens.SpaceSm)) {
-                // Side and status as words, never colour alone.
-                Text(
-                    text = stringResource(
-                        when (report.kind) {
-                            LostFoundKind.LOST -> R.string.lostfound_side_lost
-                            LostFoundKind.FOUND -> R.string.lostfound_side_found
-                        },
-                    ),
-                    style = MaterialTheme.typography.labelMedium,
-                )
-                Text(
-                    text = stringResource(
-                        when (report.status) {
-                            LostFoundStatus.OPEN -> R.string.lostfound_status_open
-                            LostFoundStatus.MATCHED -> R.string.lostfound_status_matched
-                            LostFoundStatus.REUNITED -> R.string.lostfound_status_reunited
-                            LostFoundStatus.CLOSED -> R.string.lostfound_status_closed
-                        },
-                    ),
-                    style = MaterialTheme.typography.labelMedium,
-                )
-                SyncBadge(syncState = report.syncState)
+            Spacer(modifier = Modifier.width(Dimens.SpaceMd))
+
+            Column(modifier = Modifier.weight(1f)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.Top
+                ) {
+                    Text(
+                        text = report.title,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.weight(1f)
+                    )
+                    SyncBadge(syncState = report.syncState)
+                }
+
+                // The attributes a volunteer actually scans a list for.
+                val summary = listOfNotNull(
+                    report.approximateAge?.let {
+                        stringResource(R.string.lostfound_age_approx, it)
+                    },
+                    report.clothingDescription,
+                    report.qrLocationName,
+                ).joinToString(" · ")
+
+                if (summary.isNotBlank()) {
+                    Text(
+                        text = summary,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+
+                // Who is holding this person right now — the question a frantic parent asks.
+                if (report.kind == LostFoundKind.FOUND && report.custodianName != null) {
+                    Text(
+                        text = stringResource(R.string.lostfound_with_custodian, report.custodianName),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = VariTheme.colors.info,
+                        fontWeight = FontWeight.Medium
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(Dimens.SpaceXs))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(Dimens.SpaceSm),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    // Side and status as words, never colour alone.
+                    val kindColor = if (report.kind == LostFoundKind.LOST) {
+                        VariTheme.colors.critical
+                    } else {
+                        VariTheme.colors.success
+                    }
+
+                    Surface(
+                        color = kindColor.copy(alpha = 0.1f),
+                        shape = RoundedCornerShape(Dimens.CornerPill)
+                    ) {
+                        Text(
+                            text = stringResource(
+                                when (report.kind) {
+                                    LostFoundKind.LOST -> R.string.lostfound_side_lost
+                                    LostFoundKind.FOUND -> R.string.lostfound_side_found
+                                },
+                            ).uppercase(),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = kindColor,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
+                        )
+                    }
+
+                    Text(
+                        text = stringResource(
+                            when (report.status) {
+                                LostFoundStatus.OPEN -> R.string.lostfound_status_open
+                                LostFoundStatus.MATCHED -> R.string.lostfound_status_matched
+                                LostFoundStatus.REUNITED -> R.string.lostfound_status_reunited
+                                LostFoundStatus.CLOSED -> R.string.lostfound_status_closed
+                            },
+                        ),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        fontWeight = FontWeight.Medium
+                    )
+                }
             }
         }
     }
@@ -528,7 +770,11 @@ private fun PhotoPicker(
     ) { uri ->
         // Imported rather than referenced: a picker grant does not survive a process
         // restart, and a report filed offline may not upload for hours.
-        uri?.let { PhotoCapture.importFromUri(context, it)?.let(onPhotoCaptured) }
+        if (uri != null) {
+            PhotoCapture.importFromUri(context, uri)?.let { path ->
+                onPhotoCaptured(path)
+            }
+        }
     }
 
     Column(verticalArrangement = Arrangement.spacedBy(Dimens.SpaceXs)) {
